@@ -61,7 +61,7 @@ void parseArgs(int argc,char**argv,Parameters*params){
 				case 'w':params->width=atoi(argv[i]+3);break;
 				case 'r':params->round=atoi(argv[i]+3);break;
 				case 's':params->scope=argv[i]+3;break;
-				default:fprintf(stderr,"unknow param '%c'",argv[i][1]);
+				default:fprintf(stderr,"unknown param '%c'",argv[i][1]);
 			}
 		}
 	}
@@ -77,16 +77,29 @@ int char2id(char*str_id){
 }
 
 void parseInst(Parameters*params,Parser*p){
+  int valid_var = 0;
+
 	char token[32];
 	fscanf(params->fin,"%31s",token);
 	//printf("%s\n",token);
 	if(!strcmp("var",token)){
-		char id_str[4];
-		Channel chan={};
-		fscanf(params->fin," reg %d %3[^ ] %"TXT(MAX_NAME)"[^ $]",&(chan.size),id_str,chan.name);
-		int id=char2id(id_str);
-		p->ch[id]=chan;//printf("size=%i <%c> name=<%s>\n",size,id,data);
-		p->ch[id].scope=p->cur_scopes;
+		fscanf(params->fin,"%31s",token);
+		if (!strcmp("reg", token)) {
+			valid_var = 1;
+		}
+		if (!strcmp("wire", token)) {
+			valid_var = 1;
+		}
+		if (!valid_var) {
+			printf("unknown token : %s\n",token);
+		} else {
+			char id_str[4];
+			Channel chan={};
+			fscanf(params->fin," %d %3[^ ] %"TXT(MAX_NAME)"[^$]",&(chan.size),id_str,chan.name);
+			int id=char2id(id_str);
+			p->ch[id]=chan;//printf("size=%i <%c> name=<%s>\n",size,id,data);
+			p->ch[id].scope=p->cur_scopes;
+		}
 	}
 	else if(!strcmp("scope",token))         {fscanf(params->fin,"%*127s %127[^ $]",p->scopes[p->cur_scopes=++(p->nb_scopes)]);}
 	else if(!strcmp("date",token))          {fscanf(params->fin,"\n%31[^$\n]",p->date);}
@@ -96,7 +109,7 @@ void parseInst(Parameters*params,Parser*p){
 	else if(!strcmp("upscope",token))       {fscanf(params->fin,"\n%*[^$]");p->cur_scopes=0;}/*back to root */
 	else if(!strcmp("enddefinitions",token)){fscanf(params->fin,"\n%*[^$]");}
 	else if(!strcmp("end",token))           {}
-	else {printf("unknow token : %s\n",token);}
+	else {printf("unknown token : %s\n",token);}
 }
 
 void parseTime(Parameters*params,Parser*p){
@@ -159,7 +172,7 @@ void parseFile(Parameters*params,Parser*p){
 		}else if(c=='#'){
 			parseTime(params,p);
 		}else{
-			fprintf(stderr,"unknow char : %c\n",c);
+			fprintf(stderr,"unknown char : %c\n",c);
 		}
 	}
 }
@@ -195,7 +208,7 @@ void showVertical(Parameters*params,Parser*p){
 				}
 				while(w-->0){
 					if(type)fprintf(params->fout,"%c",type);
-					else    fprintf(params->fout,"%s",data?"\356":"_");
+					else    fprintf(params->fout,"%s",data?"¯":"_");
 				}
 			}else{//bus
 				if(p->ch[chan].type[smpl])//not a data
